@@ -20,8 +20,17 @@ var data = {
         {
             name: "Art Gallery",
             value: "art_gallery"
+        },
+        {
+            name: "restaurant",
+            value: "restaurant"
+        },
+        {
+            name: "lodging",
+            value: "lodging"
         }
-    ]
+    ],
+    selectedType: "lodging"
 };
 
 var mapView = {
@@ -45,10 +54,21 @@ var mapView = {
     },
     placeItemClicked: function() {
         //Open infowindow and center map based on marker click
+        console.log("placeItemClicked");
+        console.log(this.types);
+        console.log(event.srcElement.text);
         var name = '<strong>' + this.name + '</strong>';
         mapView.infowindow.setContent(name);
         mapView.gMap.setCenter(this.position);
         mapView.infowindow.open(mapView.gMap, this);
+    },
+    placeTypeSelected: function() {
+        //Open infowindow and center map based on marker click
+        console.log("placeTypeSelected");
+        console.log(this);
+    },
+    testVM: function() {
+        console.log(koViewModel);
     },
     createMarker: function(place) {
         //TODO:  Add icons for different place-types
@@ -144,8 +164,6 @@ var mapView = {
             mapView.infowindow.open(mapView.gMap);
         }
 
-        console.log("here1");
-
         //Filter place-types from view-list and markers as they are unchecked
         $('input[type=checkbox]').change(function() {
             var type = this.value;
@@ -178,7 +196,7 @@ var mapView = {
                 koViewModel.mapMarkers()[i].setMap(null);
             }
             koViewModel.mapMarkers([]);
-            koViewModel.placeTypes([]);
+            //koViewModel.placeTypes([]);
             var bounds = new google.maps.LatLngBounds();
             //Add each place's place-types to the list
             places.forEach(function(place) {
@@ -187,6 +205,7 @@ var mapView = {
                 }
                 //Add place marker to map and to mapMarkers()
                 mapView.createMarker(place);
+
                 //Set bounds to contain the new place
                 if (place.geometry.viewport) {
                     // Only geocodes have viewport.
@@ -234,10 +253,17 @@ var mapView = {
 };
 
 var koViewModel = {
+    visibility: function(markerTypes){
+        var isVisible = markerTypes.indexOf(this.selectedType()) != -1;
+        return isVisible;
+    },
     mapMarkers: ko.observableArray(data.mapMarkers),
     placeTypes: ko.observableArray(data.placeTypes),
     options: ko.observable("filter"),
-    initializers: [mapView.initSearchPlaces(), mapView.initNearbyMarkers()],
+    selectedType: ko.observable(data.selectedType),
+    initializers: [
+        mapView.initSearchPlaces(),
+        mapView.initNearbyMarkers()]
 };
 
 ko.applyBindings(koViewModel);
