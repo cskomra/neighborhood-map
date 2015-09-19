@@ -38,7 +38,8 @@ var data = {
             value: "point_of_interest"
         }
     ],
-    selectedType: "lodging"
+    selectedType: "lodging",
+    selectedMarker: {},
 };
 
 var mapView = {
@@ -75,8 +76,10 @@ var mapView = {
         console.log("placeTypeSelected");
         console.log(this);
     },
-    testVM: function() {
-        console.log(koViewModel);
+    markerSelected: function() {
+        //Open infowindow and center map based on marker click
+        console.log("markerSelected");
+        console.log(this);
     },
     createMarker: function(place) {
         //TODO:  Add icons for different place-types
@@ -136,11 +139,6 @@ var mapView = {
         });
         return marker;
     },
-    initListeners: function() {
-        $("select[name='select-marker']").change(function() {
-            console.log(this);
-        })
-    },
     initSearchPlaces: function() {
         var input = document.getElementById('search-input');
         var searchBox = new google.maps.places.SearchBox(input);
@@ -176,63 +174,51 @@ var mapView = {
                 "Error: Your browser doesn't support geolocation.");
             mapView.infowindow.open(mapView.gMap);
         }
-
         //Filter place-types from view-list and markers as they are unchecked
-        /*
-        $("select[name='select-marker']").change(function() {
-            var type = this.value;
+        $("select[name='select-place']").change(function() {
+            var markerID = this.value;
             var markers = koViewModel.mapMarkers();
-            var placeItems = $('ul.places').children();
-            if (!this.checked) {
-                for (var i = 0; i < markers.length; i++) {
-                    if (markers[i].types.indexOf(type) != -1) {
-                        var idx = markers[i].types.indexOf(type);
-                        var removed = markers[i].types.splice(idx, idx + 1);
-                        if (markers[i].types.length == 0) {
-                            markers[i].setMap(null);
-                            var li = document.getElementById(markers[i].placeId);
-                            li.style.display = "none";
-                        }
-                    }
+            for (var i = 0; i < markers.length; i++) {
+                if (markers[i].placeId === markerID) {
+                    /*var idx = markers[i].types.indexOf(type);
+                    var removed = markers[i].types.splice(idx, idx + 1);
+                    if (markers[i].types.length == 0) {
+                        markers[i].setMap(null);
+                        var li = document.getElementById(markers[i].placeId);
+                        li.style.display = "none";
+                        */
+                    console.log("have marker");
+                    //TODO:  extract this code to a function.  Call from here and from marker click.
+                    mapView.infowindow.setContent("You selected this marker.")
+                    mapView.infowindow.open(mapView.gMap, markers[i]);
                 }
             }
+            console.log(markerID);
         });
-        */
         //Process new search
+        console.log("processing new search");
         searchBox.addListener('places_changed', function() {
             var places = searchBox.getPlaces();
+            console.log("places");
+            console.log(places);
             if (places.length == 0) {
+                //TODO:  handle the case better
                 return;
-            }
-            /*for (var i = 0; i < data.mapMarkers.length; i++) {
-                data.mapMarkers[i].setMap(null);
-            }*/
-            for (var i = 0; i < koViewModel.mapMarkers().length; i++) {
-                koViewModel.mapMarkers()[i].setMap(null);
-            }
-            koViewModel.mapMarkers([]);
-            //koViewModel.placeTypes([]);
-            var bounds = new google.maps.LatLngBounds();
-            //Add each place's place-types to the list
-            places.forEach(function(place) {
-                for (var i = 0; i < place.types.length; i++ ) {
-                    koViewModel.placeTypes.push(place.types[i]);
+            }else{
+                var bounds = new google.maps.LatLngBounds();
+                for (var i = 0; i < places.length; i++) {
+                    mapView.createMarker(places[i]);
+                    //Set bounds to contain the new place
+                    if (places[i].geometry.viewport) {
+                        // Only geocodes have viewport.
+                        bounds.union(places[i].geometry.viewport);
+                    } else {
+                        bounds.extend(places[i].geometry.location);
+                    }
                 }
-                //Add place marker to map and to mapMarkers()
-                mapView.createMarker(place);
-
-                //Set bounds to contain the new place
-                if (place.geometry.viewport) {
-                    // Only geocodes have viewport.
-                    bounds.union(place.geometry.viewport);
-                } else {
-                    bounds.extend(place.geometry.location);
-                }
-            });
-            //Make list of all place-types from all places unique
-            koViewModel.placeTypes(mapView.getUnique(koViewModel.placeTypes()));
-            //Set map bounds to contain all places (this code might be redundant)
-            mapView.gMap.fitBounds(bounds);
+                //Set map bounds to contain all places (this code might be redundant)
+                mapView.gMap.fitBounds(bounds);
+            }
             //Clear search box
             input.value = "";
         })
@@ -276,10 +262,10 @@ var koViewModel = {
     placeTypes: ko.observableArray(data.placeTypes),
     options: ko.observable("filter"),
     selectedType: ko.observable(data.selectedType),
+    selectedMarker: ko.observable(data.selectedMarker),
     initializers: [
         mapView.initSearchPlaces(),
-        mapView.initNearbyMarkers(),
-        //mapView.initListeners()
+        mapView.initNearbyMarkers()
         ]
 };
 

@@ -30,30 +30,26 @@
 				<ul class="nav navbar-nav">
 					<!--Search and Filter-->
 					<li>
+						<!--Search / Filter Option Toggle-->
+						<input type="radio" name="options" value="search" data-bind="checked: options"/> Search
+						<br>
+						<input type="radio" name="options" value="filter" data-bind="checked: options"/> Filter
+					</li>
+					<li>
 						<!--Search Input-->
 						<input type="text" id="search-input" class="form-control" placeholder="New Search" data-bind="visible: options() == 'search'">
 						<!--Filter Input Based on Types-->
-						<select name="select-marker" id="filter-input" class="form-control" data-bind="foreach: placeTypes, visible: options() == 'filter', value: selectedType, event: {change: $root.placeTypeSelected}">
+						<select name="select-type" id="filter-input" class="form-control" data-bind="foreach: placeTypes, visible: options() == 'filter', value: selectedType, event: {change: $root.placeTypeSelected}">
 							<option data-bind="text: name, value: value"></option>
 						</select>
-						<!--Search / Filter Option Toggle-->
-						<span>
-							<input type="radio" name="options" value="search" data-bind="checked: options"/> Search
-							<input type="radio" name="options" value="filter" data-bind="checked: options"/> Filter
-						</span>
+						<!--<span data-bind="text: $root.selectedType"></span>-->
 					</li>
 					<!--Places List-->
-					<li class="dropdown" data-bind="visible: mapMarkers().length > 0">
-						<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Places<span class="caret"></span></a>
-						<ul class="dropdown-menu" data-bind="foreach: mapMarkers">
-							<li data-bind="attr: {id: placeId, types: $root.visibility(types)}, visible: $root.visibility(types) "
-								class="place-item">
-								<a href="#" data-bind="text: name"></a>
-							</li>
-						</ul>
-					</li>
 					<li>
-						<span data-bind="text: $root.selectedType"></span>
+						<select name="select-place" id="place-select" class="form-control" data-bind="optionsCaption: 'Select...', visible: mapMarkers().length > 0, foreach: mapMarkers, value: selectedMarker, event: {change: $root.markerSelected}">
+							<option data-bind="attr: {id: placeId, types: $root.visibility(types)}, visible: $root.visibility(types), text: name, value: placeId"></option>
+						</select>
+						<!--<span data-bind="text: $root.selectedMarker"></span>-->
 					</li>
 				</ul>
 			</div>
