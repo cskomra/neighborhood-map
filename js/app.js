@@ -22,12 +22,20 @@ var data = {
             value: "art_gallery"
         },
         {
-            name: "restaurant",
+            name: "Restaurant",
             value: "restaurant"
         },
         {
-            name: "lodging",
+            name: "Lodging",
             value: "lodging"
+        },
+        {
+            name: "Food",
+            value: "food"
+        },
+        {
+            name: "Point of Interest",
+            value: "point_of_interest"
         }
     ],
     selectedType: "lodging"
@@ -36,8 +44,8 @@ var data = {
 var mapView = {
     gMap: new google.maps.Map(document.getElementById('map'), {
         //TODO: accept user-defined center location
-        //center: {lat: 40.1583, lng: -83.0742},
-        center: {lat: 37.441883, lng: -122.143019},
+        center: {lat: 40.1583, lng: -83.0742},  //Powell, OH
+        //center: {lat: 37.441883, lng: -122.143019},  //Palo Alto, CA
         zoom: 13
         }),
     infowindow: new google.maps.InfoWindow({maxWidth: 300}),
@@ -128,6 +136,11 @@ var mapView = {
         });
         return marker;
     },
+    initListeners: function() {
+        $("select[name='select-marker']").change(function() {
+            console.log(this);
+        })
+    },
     initSearchPlaces: function() {
         var input = document.getElementById('search-input');
         var searchBox = new google.maps.places.SearchBox(input);
@@ -165,7 +178,8 @@ var mapView = {
         }
 
         //Filter place-types from view-list and markers as they are unchecked
-        $('input[type=checkbox]').change(function() {
+        /*
+        $("select[name='select-marker']").change(function() {
             var type = this.value;
             var markers = koViewModel.mapMarkers();
             var placeItems = $('ul.places').children();
@@ -183,6 +197,7 @@ var mapView = {
                 }
             }
         });
+        */
         //Process new search
         searchBox.addListener('places_changed', function() {
             var places = searchBox.getPlaces();
@@ -263,7 +278,9 @@ var koViewModel = {
     selectedType: ko.observable(data.selectedType),
     initializers: [
         mapView.initSearchPlaces(),
-        mapView.initNearbyMarkers()]
+        mapView.initNearbyMarkers(),
+        //mapView.initListeners()
+        ]
 };
 
 ko.applyBindings(koViewModel);
