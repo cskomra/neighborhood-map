@@ -36,6 +36,10 @@ var data = {
         {
             name: "Point of Interest",
             value: "point_of_interest"
+        },
+        {
+            name: "Cafe",
+            value: "cafe"
         }
     ],
     selectedType: "lodging",
@@ -234,7 +238,7 @@ var mapView = {
         var request = {
             location: loc,
             radius: '5000',
-            types: ['restaurant', 'lodging']
+            types: ['restaurant', 'lodging', 'cafe']
         };
 
         service = new google.maps.places.PlacesService(mapView.gMap);
