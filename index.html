@@ -39,6 +39,7 @@
 
 					<li>
 						<!--Search Input-->
+						<!--TODO: Add/Debug ability to do a general search of any type of place-->
 						<input type="text" id="search-input" class="form-control" placeholder="New Search" data-bind="visible: options() == 'search'">
 						<!--Filter Input Based on Types-->
 						<select name="select-type" id="filter-input" class="form-control" data-bind="foreach: placeTypes, visible: options() == 'filter', value: selectedType, event: {change: $root.placeTypeSelected}">

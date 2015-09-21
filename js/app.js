@@ -58,7 +58,7 @@ var mapView = {
         zoom: 13
         }),
     infowindow: new google.maps.InfoWindow({maxWidth: 300}),
-    setInfowindowContent: function(place) {
+    openInfowindow: function(place) {
         var place = place;
         var name = '<strong>' + place.name + '</strong>';
         var address = '<p>' + place.vicinity + '</p>';
@@ -88,16 +88,10 @@ var mapView = {
                 mapView.infowindow.setContent(name + address + '<p>(wiki article unavailable)</p>');
             }
         });
-    },
-    placeItemClicked: function() {
-        //Open infowindow and center map based on marker click
-        console.log("placeItemClicked");
-        console.log(this.types);
-        console.log(event.srcElement.text);
-        var name = '<strong>' + this.name + '</strong>';
-        mapView.infowindow.setContent(name);
-        mapView.gMap.setCenter(this.position);
-        mapView.infowindow.open(mapView.gMap, this);
+        mapView.infowindow.open(mapView.gMap, place);
+        //Animate marker for 2 secs
+        place.setAnimation(google.maps.Animation.BOUNCE);
+        setTimeout( function(){place.setAnimation(null)}, 2000);
     },
     placeTypeSelected: function() {
         //Open infowindow and center map based on marker click
@@ -134,19 +128,7 @@ var mapView = {
 
         //add click listener to marker
         google.maps.event.addListener(marker, 'click', function() {
-            mapView.setInfowindowContent(place);
-            mapView.infowindow.open(mapView.gMap, this);
-            //Toggle marker animation and close infowindow on click
-            marker.setAnimation(google.maps.Animation.BOUNCE);
-            setTimeout( function(){marker.setAnimation(null)}, 2000);
-            /*
-            if (marker.getAnimation() !== null) {
-                marker.setAnimation(null);
-                mapView.infowindow.close();
-            } else {
-                marker.setAnimation(google.maps.Animation.BOUNCE);
-            }
-            */
+            mapView.openInfowindow(marker);
         });
         return marker;
     },
@@ -157,7 +139,6 @@ var mapView = {
         mapView.gMap.addListener('bounds_changed', function() {
             searchBox.setBounds(mapView.gMap.getBounds());
         });
-
         //Try setCenter based on user location
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(function(position) {
@@ -177,7 +158,7 @@ var mapView = {
             // Browser doesn't support Geolocation
             handleLocationError(false, mapView.infowindow, mapView.gMap.getCenter());
         };
-
+        //Current Position error handler
         function handleLocationError(browserHasGeolocation, infoWindow, pos) {
             infoWindow.setPosition(pos);
             infoWindow.setContent(browserHasGeolocation ?
@@ -191,25 +172,13 @@ var mapView = {
             var markers = koViewModel.mapMarkers();
             for (var i = 0; i < markers.length; i++) {
                 if (markers[i].placeId === markerID) {
-                    /*var idx = markers[i].types.indexOf(type);
-                    var removed = markers[i].types.splice(idx, idx + 1);
-                    if (markers[i].types.length == 0) {
-                        markers[i].setMap(null);
-                        var li = document.getElementById(markers[i].placeId);
-                        li.style.display = "none";
-                        */
-                    console.log("have marker");
-                    //TODO:  extract this code to a function.  Call from here and from marker click.
-                    mapView.infowindow.setContent("You selected this marker.")
-                    mapView.infowindow.open(mapView.gMap, markers[i]);
+                    mapView.openInfowindow(markers[i]);
                 }
             }
-            console.log(markerID);
         });
         //setMap on markers according to selected type
         $("select[name='select-type']").change(function() {
             var selectedType = this.value;
-            //mapView.setMapMarker(marker, selectedType);
             var markers = koViewModel.mapMarkers();
             for (var i = 0; i < markers.length; i++) {
                 if(selectedType == "all") {
@@ -222,7 +191,6 @@ var mapView = {
             }
         });
         //Process new search
-        console.log("processing new search");
         searchBox.addListener('places_changed', function() {
             var places = searchBox.getPlaces();
             console.log("places");
