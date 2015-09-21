@@ -51,10 +51,6 @@ var data = {
 };
 
 var mapView = {
-    mapCenter: function() {
-        var center = mapView.getDeviceLocation() || {lat: 40.1583, lng: -83.0742};
-        console.log(center);
-        },
     gMap: new google.maps.Map(document.getElementById('map'), {
         //TODO: accept user-defined center location
         center: {lat: 40.1583, lng: -83.0742},  //Powell, OH
