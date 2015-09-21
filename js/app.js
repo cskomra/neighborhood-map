@@ -51,6 +51,10 @@ var data = {
 };
 
 var mapView = {
+    mapCenter: function() {
+        var center = mapView.getDeviceLocation() || {lat: 40.1583, lng: -83.0742};
+        console.log(center);
+        },
     gMap: new google.maps.Map(document.getElementById('map'), {
         //TODO: accept user-defined center location
         center: {lat: 40.1583, lng: -83.0742},  //Powell, OH
@@ -58,6 +62,35 @@ var mapView = {
         zoom: 13
         }),
     infowindow: new google.maps.InfoWindow({maxWidth: 300}),
+    getDeviceLocation: function() {
+        //Try setCenter based on user location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                var pos = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                mapView.infowindow.setPosition(pos);
+                mapView.infowindow.setContent('You are somewhere near here.');
+                mapView.gMap.setCenter(pos);
+                mapView.infowindow.open(mapView.gMap);
+            }, function() {
+                //Geolocation service failed
+                handleLocationError(true, mapView.infowindow, mapView.gMap.getCenter());
+            });
+        } else {
+            // Browser doesn't support Geolocation
+            handleLocationError(false, mapView.infowindow, mapView.gMap.getCenter());
+        };
+        //Current Position error handler
+        function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+            infoWindow.setPosition(pos);
+            infoWindow.setContent(browserHasGeolocation ?
+                "Error: The Geolocation service failed." :
+                "Error: Your browser doesn't support geolocation.");
+            mapView.infowindow.open(mapView.gMap);
+        }
+    },
     openInfowindow: function(place) {
         var place = place;
         var name = '<strong>' + place.name + '</strong>';
@@ -93,18 +126,17 @@ var mapView = {
         place.setAnimation(google.maps.Animation.BOUNCE);
         setTimeout( function(){place.setAnimation(null)}, 2000);
     },
-    placeTypeSelected: function() {
-        //Open infowindow and center map based on marker click
-        console.log("placeTypeSelected");
-        console.log(this);
-    },
-    markerSelected: function() {
-        //Open infowindow and center map based on marker click
-        console.log("markerSelected");
-        console.log(this);
+    clearMapMarkers: function() {
+        markers = koViewModel.mapMarkers();
+        for (var i = 0; i < markers.length; i++) {
+            markers[i].setMap(null);
+        }
+        koViewModel.mapMarkers([]);
     },
     createMarker: function(place) {
         //TODO:  Add icons for different place-types
+        console.log("createMarker place:");
+        console.log(place);
         var placeLoc = place.geometry.location;
 
         //create marker
@@ -114,6 +146,7 @@ var mapView = {
             placeId: place.place_id,
             animation: google.maps.Animation.DROP,
             name: place.name,
+            vicinity: place.vicinity,
             types: place.types,
             title: place.name
         });
@@ -139,33 +172,8 @@ var mapView = {
         mapView.gMap.addListener('bounds_changed', function() {
             searchBox.setBounds(mapView.gMap.getBounds());
         });
-        //Try setCenter based on user location
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function(position) {
-                var pos = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
-                mapView.infowindow.setPosition(pos);
-                mapView.infowindow.setContent('You are somewhere near here.');
-                mapView.gMap.setCenter(pos);
-                mapView.infowindow.open(mapView.gMap);
-            }, function() {
-                //Geolocation service failed
-                handleLocationError(true, mapView.infowindow, mapView.gMap.getCenter());
-            });
-        } else {
-            // Browser doesn't support Geolocation
-            handleLocationError(false, mapView.infowindow, mapView.gMap.getCenter());
-        };
-        //Current Position error handler
-        function handleLocationError(browserHasGeolocation, infoWindow, pos) {
-            infoWindow.setPosition(pos);
-            infoWindow.setContent(browserHasGeolocation ?
-                "Error: The Geolocation service failed." :
-                "Error: Your browser doesn't support geolocation.");
-            mapView.infowindow.open(mapView.gMap);
-        }
+        mapView.getDeviceLocation();
+
         //Filter place-types from view-list and markers as they are unchecked
         $("select[name='select-place']").change(function() {
             var markerID = this.value;
@@ -196,9 +204,14 @@ var mapView = {
             console.log("places");
             console.log(places);
             if (places.length == 0) {
-                //TODO:  handle the case better
+                //TODO:  handle this case better
                 return;
+                console.log("running 'no places'");
             }else{
+                //clear existing markers
+                console.log("running else");
+                mapView.clearMapMarkers();
+
                 var bounds = new google.maps.LatLngBounds();
                 for (var i = 0; i < places.length; i++) {
                     mapView.createMarker(places[i]);
