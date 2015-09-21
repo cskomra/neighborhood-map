@@ -275,7 +275,7 @@ var koViewModel = {
     visibility: function(markerTypes){
         var isVisible = true;
         var selectedType = this.selectedType();
-        if (selectedType != "all" && markerTypes.indexOf(this.selectedType()) != -1) {
+        if(selectedType != "all" && markerTypes.indexOf(selectedType) == -1) {
             isVisible = false;
         }
         return isVisible;
