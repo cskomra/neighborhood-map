@@ -28,13 +28,15 @@
 			<!-- Collect the nav links and other content for toggling-->
 			<div class="collapse navbar-collapse" id="navbar-collapse">
 				<ul class="nav navbar-nav">
+
 					<!--Search and Filter-->
 					<li>
-						<!--Search / Filter Option Toggle-->
+						<!--Toggle-->
 						<input type="radio" name="options" value="search" data-bind="checked: options"/> Search
 						<br>
 						<input type="radio" name="options" value="filter" data-bind="checked: options"/> Filter
 					</li>
+
 					<li>
 						<!--Search Input-->
 						<input type="text" id="search-input" class="form-control" placeholder="New Search" data-bind="visible: options() == 'search'">
@@ -44,6 +46,7 @@
 						</select>
 						<!--<span data-bind="text: $root.selectedType"></span>-->
 					</li>
+
 					<!--Places List-->
 					<li>
 						<select name="select-place" id="place-select" class="form-control" data-bind="optionsCaption: 'Select...', visible: mapMarkers().length > 0, foreach: mapMarkers, value: selectedMarker, event: {change: $root.markerSelected}">

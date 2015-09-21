@@ -2,6 +2,10 @@ var data = {
     mapMarkers: [],
     placeTypes: [
         {
+            name: "All",
+            value: "all"
+        },
+        {
             name: "Accounting",
             value: "accounting"
         },
@@ -42,7 +46,7 @@ var data = {
             value: "cafe"
         }
     ],
-    selectedType: "lodging",
+    selectedType: "all",
     selectedMarker: {},
 };
 
@@ -54,21 +58,6 @@ var mapView = {
         zoom: 13
         }),
     infowindow: new google.maps.InfoWindow({maxWidth: 300}),
-    getUnique: function(inputArray) {
-        //inputArray: all place-types of all places in search results
-        //outputArray:  a unique array of place-type values
-        var outputArray = [];
-        for (var i = 0; i < inputArray.length; i++) {
-            if (jQuery.inArray(inputArray[i], outputArray) == -1) {
-                outputArray.push(inputArray[i]);
-            }
-        }
-        return outputArray;
-    },
-    setMapMarker: function(marker, selectedType) {
-        console.log(selectedType);
-
-    },
     placeItemClicked: function() {
         //Open infowindow and center map based on marker click
         console.log("placeItemClicked");
@@ -95,7 +84,7 @@ var mapView = {
 
         //create marker
         var marker = new google.maps.Marker({
-            //map: this.gMap,
+            map: this.gMap,
             position: placeLoc,
             placeId: place.place_id,
             animation: google.maps.Animation.DROP,
@@ -104,10 +93,9 @@ var mapView = {
             title: place.name
         });
         //setMap according to selectedType
-        if (marker.types.indexOf(koViewModel.selectedType()) == -1 ) {
+        var selectedType = koViewModel.selectedType();
+        if (selectedType != "all" && marker.types.indexOf(selectedType) == -1 ) {
             marker.setMap(null)
-        }else{
-            marker.setMap(mapView.gMap)
         }
 
         //add marker to koViewModel.mapMarkers
@@ -216,7 +204,9 @@ var mapView = {
             //mapView.setMapMarker(marker, selectedType);
             var markers = koViewModel.mapMarkers();
             for (var i = 0; i < markers.length; i++) {
-                if (markers[i].types.indexOf(selectedType) == -1 ) {
+                if(selectedType == "all") {
+                    markers[i].setMap(mapView.gMap)
+                }else if(markers[i].types.indexOf(selectedType) == -1 ) {
                     markers[i].setMap(null)
                 }else{
                     markers[i].setMap(mapView.gMap)
@@ -283,7 +273,11 @@ var mapView = {
 
 var koViewModel = {
     visibility: function(markerTypes){
-        var isVisible = markerTypes.indexOf(this.selectedType()) != -1;
+        var isVisible = true;
+        var selectedType = this.selectedType();
+        if (selectedType != "all" && markerTypes.indexOf(this.selectedType()) != -1) {
+            isVisible = false;
+        }
         return isVisible;
     },
     mapMarkers: ko.observableArray(data.mapMarkers),
