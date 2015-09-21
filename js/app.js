@@ -89,10 +89,24 @@ var mapView = {
     },
     openInfowindow: function(place) {
         var place = place;
+        console.log("openInfowindow place:");
+        console.log(place);
+        var lat = place.position.H;
+        var lng = place.position.L;
+        console.log(lat + "," + lng);
         var name = '<strong>' + place.name + '</strong>';
         var address = '<p>' + place.vicinity + '</p>';
         var wikiUrl = 'http://en.wikipedia.org/w/api.php?action=opensearch&search=' +
         encodeURIComponent(place.name) + '&format=json&callback=wikiCallback';
+        var fourSquareUrl = 'https://api.foursquare.com/v2/venues/search' +
+            '?client_id=' + 'QGG4VTYXOEQWJG1X0SXDFPS11ZU1FUOFKC25BSZWVNXNNDKK' +
+            '&client_secret=' + 'A0JCZY23XGOIFZNLTAVF0L2CTWOH1DOUBDGKRTRCCRDKDTXG' +
+            '&v=' + '20130815' +
+            '&ll=' + lat + "," + lng +
+            '&query=' + place.name;
+        console.log(fourSquareUrl);
+
+
         var content = "";
         $.ajax(wikiUrl, {
             dataType: 'jsonp',
@@ -103,17 +117,40 @@ var mapView = {
                     var articleStr = articleList[i];
                     if (articleStr) {
                         var url = 'http://en.wikipedia.org/wiki/' + articleStr;
-                        contentLink = '<p><a href="' + url + '" target="_blank">' + articleStr +
+                        contentLink = '<p>Wiki: <a href="' + url + '" target="_blank">' + articleStr +
                         '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span></a></p>';
                         mapView.infowindow.setContent(name + address + contentLink);
                     } else {
-                        mapView.infowindow.setContent(name + address + '<p>(wiki article unavailable)</p>');
+
+                        //Could not get wiki article.  Try foursquare information.
+                        $.ajax(fourSquareUrl, {
+                            dataType: 'jsonp',
+                            //Set content if successful
+                            success: function( response ) {
+                                console.log("foursquare response:");
+                                console.log(response);
+                                var venues = response.response.venues;
+                                if (venues) {
+                                    var ven = venues[0];
+                                    if (ven) {
+                                        var venueURL = ven.url;
+                                        console.log(venueURL);
+                                        contentLink = '<p>Foursquare: <a href="' + venueURL + '" target="_blank">' + venueURL +
+                                        '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span></a></p>';
+                                        mapView.infowindow.setContent(name + address + contentLink);
+                                    }
+                                }
+                            },
+                            //Set content if fail
+                            error: function() {
+                                mapView.infowindow.setContent(name + address + '<p>(Foursquare info unavailable)</p>');
+                            }
+                        });
                     }
                 }
             },
             //Set content if fail
             error: function() {
-                console.log("wiki error")
                 mapView.infowindow.setContent(name + address + '<p>(wiki article unavailable)</p>');
             }
         });
