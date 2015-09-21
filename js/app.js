@@ -65,6 +65,10 @@ var mapView = {
         }
         return outputArray;
     },
+    setMapMarker: function(marker, selectedType) {
+        console.log(selectedType);
+
+    },
     placeItemClicked: function() {
         //Open infowindow and center map based on marker click
         console.log("placeItemClicked");
@@ -91,7 +95,7 @@ var mapView = {
 
         //create marker
         var marker = new google.maps.Marker({
-            map: this.gMap,
+            //map: this.gMap,
             position: placeLoc,
             placeId: place.place_id,
             animation: google.maps.Animation.DROP,
@@ -99,6 +103,13 @@ var mapView = {
             types: place.types,
             title: place.name
         });
+        //setMap according to selectedType
+        if (marker.types.indexOf(koViewModel.selectedType()) == -1 ) {
+            marker.setMap(null)
+        }else{
+            marker.setMap(mapView.gMap)
+        }
+
         //add marker to koViewModel.mapMarkers
         koViewModel.mapMarkers.push(marker);
 
@@ -198,6 +209,19 @@ var mapView = {
                 }
             }
             console.log(markerID);
+        });
+        //setMap on markers according to selected type
+        $("select[name='select-type']").change(function() {
+            var selectedType = this.value;
+            //mapView.setMapMarker(marker, selectedType);
+            var markers = koViewModel.mapMarkers();
+            for (var i = 0; i < markers.length; i++) {
+                if (markers[i].types.indexOf(selectedType) == -1 ) {
+                    markers[i].setMap(null)
+                }else{
+                    markers[i].setMap(mapView.gMap)
+                }
+            }
         });
         //Process new search
         console.log("processing new search");
