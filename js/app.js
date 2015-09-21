@@ -58,6 +58,37 @@ var mapView = {
         zoom: 13
         }),
     infowindow: new google.maps.InfoWindow({maxWidth: 300}),
+    setInfowindowContent: function(place) {
+        var place = place;
+        var name = '<strong>' + place.name + '</strong>';
+        var address = '<p>' + place.vicinity + '</p>';
+        var wikiUrl = 'http://en.wikipedia.org/w/api.php?action=opensearch&search=' +
+        encodeURIComponent(place.name) + '&format=json&callback=wikiCallback';
+        var content = "";
+        $.ajax(wikiUrl, {
+            dataType: 'jsonp',
+            //Set content if successful
+            success: function( response ) {
+                var articleList = response[1];
+                for (var i = 0; i < 1; i++) {
+                    var articleStr = articleList[i];
+                    if (articleStr) {
+                        var url = 'http://en.wikipedia.org/wiki/' + articleStr;
+                        contentLink = '<p><a href="' + url + '" target="_blank">' + articleStr +
+                        '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span></a></p>';
+                        mapView.infowindow.setContent(name + address + contentLink);
+                    } else {
+                        mapView.infowindow.setContent(name + address + '<p>(wiki article unavailable)</p>');
+                    }
+                }
+            },
+            //Set content if fail
+            error: function() {
+                console.log("wiki error")
+                mapView.infowindow.setContent(name + address + '<p>(wiki article unavailable)</p>');
+            }
+        });
+    },
     placeItemClicked: function() {
         //Open infowindow and center map based on marker click
         console.log("placeItemClicked");
@@ -103,42 +134,19 @@ var mapView = {
 
         //add click listener to marker
         google.maps.event.addListener(marker, 'click', function() {
-            var name = '<strong>' + place.name + '</strong>';
-            var address = '<p>' + place.formatted_address.split(",")[0] + '</p>';
-            var content = '';
-            //Get wiki article based on place name
-            var wikiUrl = 'http://en.wikipedia.org/w/api.php?action=opensearch&search=' +
-            encodeURIComponent(place.name) + '&format=json&callback=wikiCallback';
-            $.ajax(wikiUrl, {
-                dataType: 'jsonp',
-                //Set content if successful
-                success: function( response ) {
-                    var articleList = response[1];
-                    for (var i = 0; i < 1; i++) {
-                        articleStr = articleList[i];
-                        if (articleStr) {
-                            var url = 'http://en.wikipedia.org/wiki/' + articleStr;
-                            content = '<p><a href="' + url + '" target="_blank">' + articleStr +
-                            '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span></a></p>';
-                            mapView.infowindow.setContent(name + address + content);
-                        } else {
-                            mapView.infowindow.setContent(name + address + '<p>(wiki article unavailable)</p>');
-                        }
-                    }
-                },
-                //Set content if fail
-                error: function() {
-                    mapView.infowindow.setContent(name + address + '<p>(wiki article unavailable)</p>');
-                }
-            });
+            mapView.setInfowindowContent(place);
             mapView.infowindow.open(mapView.gMap, this);
             //Toggle marker animation and close infowindow on click
+            marker.setAnimation(google.maps.Animation.BOUNCE);
+            setTimeout( function(){marker.setAnimation(null)}, 2000);
+            /*
             if (marker.getAnimation() !== null) {
                 marker.setAnimation(null);
                 mapView.infowindow.close();
             } else {
                 marker.setAnimation(google.maps.Animation.BOUNCE);
             }
+            */
         });
         return marker;
     },
