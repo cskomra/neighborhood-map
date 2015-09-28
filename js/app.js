@@ -522,7 +522,7 @@ var appInit = {
         script.src = src;
     },
     initNearbyMarkers: function() {
-        //TODO: Allow user to set default request values in 'user preferences'
+        //TODO: Allow user to set default values in 'user preferences'
         var request = {
             location: data.searchLoc.placeLoc,
             radius: '5000',
@@ -535,7 +535,7 @@ var appInit = {
                 for (var i = 0; i < results.length; i++) {
                     var place = results[i];
 
-                    var marker = mapView.createMarker(place);
+                    mapView.createMarker(place);
                     //Set bounds to contain the new place
                     if (place.geometry.viewport) {
                         // Only geocodes have viewport.
@@ -569,15 +569,14 @@ var appInit = {
 
         data.searchBox.addListener('places_changed', function() {
             var places = data.searchBox.getPlaces();
-            if (places.length == 0) {
+            if (places.length === 0) {
                 //TODO:  handle this case better
                 return;
             }else{
                 //clear existing markers
                 mapView.clearMapMarkers();
-                //get map bounds
-                //var bounds = new google.maps.LatLngBounds();
                 koViewModel.selectedType(places[0].types[0]);
+                //get map bounds
                 for (var i = 0; i < places.length; i++) {
                     mapView.createMarker(places[i]);
                     //Set bounds to contain the new place
@@ -594,6 +593,7 @@ var appInit = {
             //Clear search box
             input.value = "";
         });
+
         //Open infowindow for selected place
         $("select[name='select-place']").change(function() {
             var markerID = this.value;
@@ -604,20 +604,22 @@ var appInit = {
                 }
             }
         });
+
         //setMap on markers according to selected type
         $("select[name='select-type']").change(function() {
             var selectedType = this.value;
             var markers = koViewModel.mapMarkers();
             for (var i = 0; i < markers.length; i++) {
                 if(markers[i].types.indexOf(selectedType) == -1 ) {
-                    markers[i].setMap(null)
+                    markers[i].setMap(null);
                 }else{
-                    markers[i].setMap(data.map)
+                    markers[i].setMap(data.map);
                     koViewModel.selectedMarker(markers[i].placeId);
                     //Set bounds to contain the new place
                     data.bounds.extend(markers[i].position);
                 }
             }
+            data.map.fitBounds(data.bounds);
         });
 
         data.infowindow = new google.maps.InfoWindow({maxWidth: 300});
@@ -631,15 +633,14 @@ var appInit = {
 };
 
 appInit.loadScript('https://maps.googleapis.com/maps/api/js?key=AIzaSyBScrNGYANSOM7AZq8lsQ6SqNiawp7duIU&libraries=places&callback=appInit.initialize',
-    false);  //Referenced:  http://jsfiddle.net/doktormolle/7cu2f/
-
+    false);  //Reference:  http://jsfiddle.net/doktormolle/7cu2f/
 
 var mapView = {
     toggleOverlay: function() {
         if(window.innerWidth < 768) {
             var overlay = document.getElementById('overlay');
             var specialBox = document.getElementById('specialBox');
-            overlay.style.opacity = .5;
+            overlay.style.opacity = 0.5;
             if(overlay.style.display == "block"){
                 overlay.style.display = "none";
                 specialBox.style.display = "none";
@@ -650,7 +651,6 @@ var mapView = {
         }
     },
     getDeviceLocation: function() {
-        //TODO: refactor this to work with recent init changes
         //TODO: use with 'use my location' in user settings
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(function(position) {
@@ -661,14 +661,14 @@ var mapView = {
                 mapView.infowindow.setPosition(pos);
                 mapView.infowindow.setContent('You are somewhere near here.');
                 mapView.gMap.setCenter(pos);
-                /*
+
                 var marker = new google.maps.Marker({
                     position: pos,
-                    map: mapView.gMap,
+                    map: data.map,
                     title: 'YAH Marker'
                   });
-                */
-                //koViewModel.mapMarkers.push(marker);
+
+                koViewModel.mapMarkers.push(marker);
                 mapView.infowindow.open(mapView.gMap, marker);
             }, function() {
                 //Geolocation service failed
@@ -677,20 +677,21 @@ var mapView = {
         } else {
             // Browser doesn't support Geolocation
             handleLocationError(false);
-        };
+        }
+
         //Current Position error handler
         function handleLocationError(browserHasGeolocation) {
-            infowindow = mapView.infowindow;
-            infowindow.setPosition(mapView.gMap.getCenter());
+            data.infowindow = mapView.infowindow;
+            data.infowindow.setPosition(mapView.gMap.getCenter());
             var content = browserHasGeolocation ?
                 "<p><h5>Error</h5></p><p>The Geolocation service has failed.</p>" :
                 "<p><h5>Error</h5></p><p>Your browser doesn't support geolocation.</p>";
-            infowindow.setContent(content + "<p>Therefore, your search is based on Powell, OH</p>");
+            data.infowindow.setContent(content + "<p>Therefore, your search is based on Powell, OH</p>");
             mapView.infowindow.open(mapView.gMap);
         }
     },
     openInfowindow: function(place) {
-        var place = place;
+        //var place = place;
         var lat = place.position.H;
         var lng = place.position.L;
         var name = '<strong>' + place.name + '</strong>';
@@ -703,67 +704,73 @@ var mapView = {
             '&v=' + '20130815' +
             '&ll=' + lat + "," + lng +
             '&query=' + place.name;
-        var content = "";
+        var contentLink = '';
+        var setInfowindowContent = function(msg) {
+            data.infowindow.setContent(name + address + msg);
+        };
         $.ajax(wikiUrl, {
             dataType: 'jsonp',
             //Set content if successful
             success: function( response ) {
                 var articleList = response[1];
-                for (var i = 0; i < 1; i++) {
-                    var articleStr = articleList[i];
-                    if (articleStr) {
-                        var url = 'http://en.wikipedia.org/wiki/' + articleStr;
-                        contentLink = '<p>Wiki: <a href="' + url + '" target="_blank">' + articleStr +
-                        '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span></a></p>';
-                        data.infowindow.setContent(name + address + contentLink);
-                    } else {
+                var articleStr = articleList[0];
+                if (articleStr) {
+                    var url = 'http://en.wikipedia.org/wiki/' + articleStr;
+                    contentLink = '<p>Wiki: <a href="' + url + '" target="_blank">' + articleStr +
+                    '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span></a></p>';
+                    //data.infowindow.setContent(name + address + contentLink);
+                    setInfowindowContent(contentLink);
+                } else {
 
-                        //Could not get wiki article.  Try foursquare information.
-                        $.ajax(fourSquareUrl, {
-                            dataType: 'jsonp',
-                            //Set content if successful
-                            success: function( response ) {
-                                var venues = response.response.venues;
-                                if (venues) {
-                                    var ven = venues[0];
-                                    if(ven){
-                                        if (ven.url) {
-                                            var venueURL = ven.url;
-                                            contentLink = '<p>Foursquare: <a href="' + venueURL + '" target="_blank">' + venueURL +
-                                            '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span></a></p>';
-                                            data.infowindow.setContent(name + address + contentLink);
-                                        }else{
-                                            data.infowindow.setContent(name + address + '<p><em>(url unavailable)</em></p>');
-                                        }
+                    //Could not get wiki article.  Try foursquare information.
+                    $.ajax(fourSquareUrl, {
+                        dataType: 'jsonp',
+                        //Set content if successful
+                        success: function( response ) {
+                            var venues = response.response.venues;
+                            if (venues) {
+                                var ven = venues[0];
+                                if(ven){
+                                    if (ven.url) {
+                                        var venueURL = ven.url;
+                                        contentLink = '<p>Foursquare: <a href="' + venueURL + '" target="_blank">' + venueURL +
+                                        '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span></a></p>';
+                                        //data.infowindow.setContent(name + address + contentLink);
+                                        setInfowindowContent(contentLink);
                                     }else{
-                                        data.infowindow.setContent(name + address + '<p><em>(venue unavailable)</em></p>');
+                                        //data.infowindow.setContent(name + address + '<p><em>(url unavailable)</em></p>');
+                                        setInfowindowContent('<p><em>(url unavailable)</em></p>');
                                     }
-
                                 }else{
-                                    data.infowindow.setContent(name + address + '<p><em>(venues unavailable)</em></p>');
+                                    //data.infowindow.setContent(name + address + '<p><em>(venue unavailable)</em></p>');
+                                    setInfowindowContent('<p><em>(url unavailable)</em></p>');
                                 }
-                            },
-                            //Set content if fail
-                            error: function() {
-                                data.infowindow.setContent(name + address + '<p><em>(information unavailable)</em></p>');
+
+                            }else{
+                                //data.infowindow.setContent(name + address + '<p><em>(venues unavailable)</em></p>');
+                                setInfowindowContent('<p><em>(venues unavailable)</em></p>');
                             }
-                        });
-                    }
+                        },
+                        //Set content if fail
+                        error: function() {
+                            setInfowindowContent('<p><em>(information unavailable)</em></p>');
+                        }
+                    });
                 }
             },
             //Set content if fail
             error: function() {
-                data.infowindow.setContent(name + address + '<p><em>(wiki article unavailable)</em></p>');
+                setInfowindowContent('<p><em>(wiki article unavailable)</em></p>');
             }
         });
         data.map.setCenter(place.position);
         data.infowindow.open(data.map, place);
         //Animate marker for 2 secs
         place.setAnimation(google.maps.Animation.BOUNCE);
-        setTimeout( function(){place.setAnimation(null)}, 2000);
+        setTimeout( function(){place.setAnimation(null);}, 2000);
     },
     clearMapMarkers: function() {
-        markers = koViewModel.mapMarkers();
+        var markers = koViewModel.mapMarkers();
         for (var i = 0; i < markers.length; i++) {
             markers[i].setMap(null);
         }
@@ -771,17 +778,17 @@ var mapView = {
     },
     createMarker: function(place) {
         var placeLoc = place.geometry.location;
-        var placeAddress = (place.vicinity == undefined) ? place.formatted_address : place.vicinity;
+        var placeAddress = (place.vicinity === undefined) ? place.formatted_address : place.vicinity;
 
         //style marker based on place-type
-        var image = "img/mi-gray-t.gif"
+        var image = "img/mi-gray-t.gif";
         var priorityType = place.types;
         if(priorityType.indexOf("restaurant") != -1) {
-            image = "img/mi-red-t.gif"
+            image = "img/mi-red-t.gif";
         }else if(priorityType.indexOf("gas_station") != -1) {
-            image = "img/mi-green-t.gif"
+            image = "img/mi-green-t.gif";
         }else if(priorityType.indexOf("lodging") != -1) {
-            image = "img/mi-orange-t.gif"
+            image = "img/mi-orange-t.gif";
         }
 
         data.marker = new google.maps.Marker(
@@ -800,8 +807,7 @@ var mapView = {
         //setMap according to selectedType
         var selectedType = koViewModel.selectedType();
         if (data.marker.types.indexOf(selectedType) == -1 ) {
-            console.log("setting marker: null");
-            data.marker.setMap(null)
+            data.marker.setMap(null);
         }
 
         //add marker to koViewModel.mapMarkers
@@ -809,7 +815,6 @@ var mapView = {
 
         //add click listener to marker
         google.maps.event.addListener(data.marker, 'click', function() {
-            console.log(this);
             mapView.openInfowindow(this);
         });
         return data.marker;
